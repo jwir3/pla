@@ -1,8 +1,9 @@
 PKG_CONFIG = $(shell which pkg-config)
+INC = ./include
 INC_CAIRO =
 LIB_CAIRO =
 
-CFLAGS = -Wall -g -O2
+CFLAGS = -Wall -g -O2 -I$(INC)
 LDFLAGS = -lm
 
 ifneq ($(INC_CAIRO),)
@@ -25,10 +26,13 @@ else
   endif
 endif
 
-OBJS = render.o render_txt.o pla.o utils.o main.o load.o utf8.o 
+OBJS = build/render.o build/render_txt.o build/pla.o build/utils.o build/main.o build/load.o build/utf8.o
+
+build/%.o: src/%.c
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 pla: $(OBJS)
-	$(CC) -o pla $(OBJS) $(LDFLAGS)
+	$(CC) -o build/pla $(OBJS) $(LDFLAGS)
 
-clean: 
-	rm -f pla $(OBJS)
+clean:
+	rm -f build/pla $(OBJS)
