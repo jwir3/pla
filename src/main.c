@@ -17,6 +17,7 @@
 #include "load.h"
 #include "render.h"
 #include "render_txt.h"
+#include "utils.h"
 
 void usage(void) {
 	fprintf(stderr,
@@ -30,43 +31,6 @@ void usage(void) {
 		"    -m  : margin size. Default 150\n"
 		"\n"
 	);
-}
-
-time_t convert_yyymmdd(const char *date)
-{
-	struct tm tm;
-
-	memset(&tm, 0, sizeof(struct tm));
-
-	tm.tm_year = conv(date, 4) - 1900;
-	if (tm.tm_year < 0)
-		return -1;
-
-	tm.tm_mon = conv(date + 4, 2) - 1;
-	if (tm.tm_mon < 0)
-		return -1;
-
-	tm.tm_mday = conv(date + 6, 2);
-	if (tm.tm_mday < 0)
-		return -1;
-
-	return mktime(&tm);
-}
-
-static inline
-void oid_add(char ***oid, int *noid, char *id)
-{
-	int i;
-
-	/* check if exists */
-	for (i=0; i<(*noid); i++)
-		if ((*oid)[i] == id)
-			return;
-
-	/* add */
-	(*oid) = realloc((*oid), ((*noid)+1)*sizeof(int));
-	(*oid)[(*noid)] = id;
-	(*noid)++;
 }
 
 int main(int argc, char *argv[])
@@ -377,7 +341,7 @@ int main(int argc, char *argv[])
 	/* if start is set */
 	if (start != -1)
 		d.start = start;
-	
+
 	/* if end is set */
 	if (end != -1)
 		d.duration = end - d.start;
@@ -386,7 +350,7 @@ int main(int argc, char *argv[])
 	if (mode == 0) {
 		p = strrchr(out, '.');
 		if (p == NULL)
-			mode = 1; 
+			mode = 1;
 		else if (strcasecmp(p, ".png") == 0)
 			mode = 1;
 		else if (strcasecmp(p, ".eps") == 0)

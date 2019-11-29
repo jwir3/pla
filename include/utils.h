@@ -20,5 +20,7 @@ void cairo_set_source_col(cairo_t *c, const struct color *col);
 void col_dark(struct color *in, struct color *out, double dark);
 double max(double *in, int nb);
 cairo_status_t cairo_wr(void *closure, const unsigned char *data, unsigned int length);
+time_t convert_yyymmdd(const char *date);
+void oid_add(char ***oid, int *noid, char *id);
 
 #endif /* __UTILS_H__ */

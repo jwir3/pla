@@ -39,7 +39,7 @@ void convert_rgba_hex(const char *hex, unsigned char alpha, struct color *out)
 
 	if (hex[0] == '#')
 		hex++;
-	
+
 	if (strlen(hex) != 6) {
 		out->r = 0;
 		out->g = 0;
@@ -47,7 +47,7 @@ void convert_rgba_hex(const char *hex, unsigned char alpha, struct color *out)
 		out->a = 0;
 		return;
 	}
-	
+
 	out->r = ( hex_to_int(hex[0]) * 16.0f ) + hex_to_int(hex[1]);
 	out->g = ( hex_to_int(hex[2]) * 16.0f ) + hex_to_int(hex[3]);
 	out->b = ( hex_to_int(hex[4]) * 16.0f ) + hex_to_int(hex[5]);
@@ -89,4 +89,40 @@ cairo_status_t cairo_wr(void *closure, const unsigned char *data, unsigned int l
 	fwrite(data, 1, length, out);
 
 	return CAIRO_STATUS_SUCCESS;
+}
+
+time_t convert_yyymmdd(const char *date)
+{
+	struct tm tm;
+
+	memset(&tm, 0, sizeof(struct tm));
+
+	tm.tm_year = conv(date, 4) - 1900;
+	if (tm.tm_year < 0)
+		return -1;
+
+	tm.tm_mon = conv(date + 4, 2) - 1;
+	if (tm.tm_mon < 0)
+		return -1;
+
+	tm.tm_mday = conv(date + 6, 2);
+	if (tm.tm_mday < 0)
+		return -1;
+
+	return mktime(&tm);
+}
+
+void oid_add(char ***oid, int *noid, char *id)
+{
+	int i;
+
+	/* check if exists */
+	for (i=0; i<(*noid); i++)
+		if ((*oid)[i] == id)
+			return;
+
+	/* add */
+	(*oid) = realloc((*oid), ((*noid)+1)*sizeof(int));
+	(*oid)[(*noid)] = id;
+	(*noid)++;
 }
