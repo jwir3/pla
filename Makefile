@@ -3,7 +3,7 @@ INC = ./include
 INC_CAIRO =
 LIB_CAIRO =
 
-CFLAGS = -Wall -g -O2 -I$(INC)
+CFLAGS = -Wall -g -O2 -fpic -I$(INC)
 LDFLAGS = -lm
 
 ifneq ($(INC_CAIRO),)
@@ -26,13 +26,23 @@ else
   endif
 endif
 
-OBJS = build/render.o build/render_txt.o build/pla.o build/utils.o build/main.o build/load.o build/utf8.o
+OBJS = build/render.o build/render_txt.o build/pla.o build/utils.o build/load.o build/utf8.o
+MAIN = build/main.o
+
+pla: build $(MAIN) lib
+	$(CC) -o build/pla build/main.o -L./build -lpla
+
+build:
+	mkdir -p build
 
 build/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-pla: $(OBJS)
-	$(CC) -o build/pla $(OBJS) $(LDFLAGS)
+lib: $(OBJS)
+	$(CC) -shared -o build/libpla.so $(OBJS) $(LDFLAGS)
+
+main.o:
+	$(CC) -c -o build/pla src/main.c -L./build -lpla -Wall -g -O2 -I$(INC)
 
 clean:
-	rm -f build/pla $(OBJS)
+	rm -f build/pla.* build/libpla.* $(OBJS)
