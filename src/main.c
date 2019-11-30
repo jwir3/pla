@@ -17,11 +17,26 @@
 #include "load.h"
 #include "render.h"
 #include "render_txt.h"
+#include "utils.h"
+
+typedef struct arg_t {
+	char** id;
+	const char* in_file;
+	const char* out_file;
+	int mode;
+	time_t start;
+	time_t end;
+	enum language lng;
+	struct disp d;
+	int noid;
+	char **oid;
+	int nid;
+} arg_t;
 
 void usage(void) {
 	fprintf(stderr,
 		"\n"
-		"pla -i <filename> [-o <filename>] [-f (eps|png|svg|pdf|csv|tex)]\n"
+		"pla -i <filename> -o <filename> [-f (eps|png|svg|pdf|csv|tex)]\n"
 		"    [-s yyyymmdd] [-e yyyymmdd] [-id task_id] [-oid task_id]\n"
 		"    [-res] [-did] [-m <margin>] -l (en|fr)\n"
 		"\n"
@@ -32,85 +47,36 @@ void usage(void) {
 	);
 }
 
-time_t convert_yyymmdd(const char *date)
-{
-	struct tm tm;
-
-	memset(&tm, 0, sizeof(struct tm));
-
-	tm.tm_year = conv(date, 4) - 1900;
-	if (tm.tm_year < 0)
-		return -1;
-
-	tm.tm_mon = conv(date + 4, 2) - 1;
-	if (tm.tm_mon < 0)
-		return -1;
-
-	tm.tm_mday = conv(date + 6, 2);
-	if (tm.tm_mday < 0)
-		return -1;
-
-	return mktime(&tm);
-}
-
-static inline
-void oid_add(char ***oid, int *noid, char *id)
-{
+arg_t* get_arguments(int argc, char* argv[]) {
 	int i;
-
-	/* check if exists */
-	for (i=0; i<(*noid); i++)
-		if ((*oid)[i] == id)
-			return;
-
-	/* add */
-	(*oid) = realloc((*oid), ((*noid)+1)*sizeof(int));
-	(*oid)[(*noid)] = id;
-	(*noid)++;
-}
-
-int main(int argc, char *argv[])
-{
-	const char *out = NULL;
-	const char *in = NULL;
-	char *p;
-	int mode = 0;
-	struct disp d;
-	struct list_head base = LIST_HEAD_INIT(base);
-	struct list_head res = LIST_HEAD_INIT(res);
-	struct task *t;
-	struct task *tt;
-	struct res *r;
-	struct res *rr;
-	time_t max;
-	int i;
-	time_t start = -1;
-	time_t end = -1;
-	int nid = 0;
-	char **id = NULL;
-	int noid = 0;
-	char **oid = NULL;
-	int ok;
-	int first_id = 0;
 	char *err;
-	enum language lng = french;
-
-	d.display_res = 0;
-	d.display_id = 0;
-	d.margin = 150.0f;
+	arg_t* args = malloc(sizeof(arg_t));
+	args->in_file = NULL;
+	args->out_file = NULL;
+	args->mode = 0;
+	args->start = -1;
+	args->end = -1;
+	args->lng = french;
+	args->id = NULL;
+	args->d.display_res = 0;
+	args->d.display_id = 0;
+	args->d.margin = 150.0f;
+	args->noid = 0;
+	args->oid = NULL;
+	args->nid = 0;
 
 	/* argument parser */
 	for (i=1; i<argc; i++) {
 
 		/* input file */
-		/**/ if (strcmp(argv[i], "-i") == 0) {
+		if (strcmp(argv[i], "-i") == 0) {
 			i++;
 			if (i == argc) {
 				fprintf(stderr, "\nargument -i expect filename\n");
 				usage();
 				exit(1);
 			}
-			in = argv[i];
+			args->in_file = argv[i];
 		}
 
 		/* output file */
@@ -121,7 +87,7 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			out = argv[i];
+			args->out_file = argv[i];
 		}
 
 		/* start date for render */
@@ -132,8 +98,8 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			start = convert_yyymmdd(argv[i]);
-			if (start == -1) {
+			args->start = convert_yyymmdd(argv[i]);
+			if (args->start == -1) {
 				fprintf(stderr, "\nargument -s: invalid date\n");
 				usage();
 				exit(1);
@@ -148,13 +114,13 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			end = convert_yyymmdd(argv[i]);
-			if (end == -1) {
+			args->end = convert_yyymmdd(argv[i]);
+			if (args->end == -1) {
 				fprintf(stderr, "\nargument -e: invalid date\n");
 				usage();
 				exit(1);
 			}
-			end += 86400;
+			args->end += 86400;
 		}
 		/* language */
 		else if (strcmp(argv[i], "-l") == 0) {
@@ -164,10 +130,10 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			/**/ if (strcasecmp(argv[i], "en") == 0)
-				lng = english;
+		  if (strcasecmp(argv[i], "en") == 0)
+				args->lng = english;
 			else if (strcasecmp(argv[i], "fr") == 0)
-				lng = french;
+				args->lng = french;
 		}
 
 		/* format */
@@ -178,18 +144,19 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			/**/ if (strcasecmp(argv[i], "png") == 0)
-				mode = 1;
+
+		  if (strcasecmp(argv[i], "png") == 0)
+				args->mode = 1;
 			else if (strcasecmp(argv[i], "eps") == 0)
-				mode = 2;
+				args->mode = 2;
 			else if (strcasecmp(argv[i], "svg") == 0)
-				mode = 3;
+				args->mode = 3;
 			else if (strcasecmp(argv[i], "pdf") == 0)
-				mode = 4;
+				args->mode = 4;
 			else if (strcasecmp(argv[i], "csv") == 0)
-				mode = 5;
+				args->mode = 5;
 			else if (strcasecmp(argv[i], "tex") == 0)
-				mode = 5;
+				args->mode = 5;
 		}
 
 		/* task id */
@@ -202,9 +169,9 @@ int main(int argc, char *argv[])
 			}
 
 			/* add id */
-			id = realloc(id, (nid+1)*sizeof(char *));
-			id[nid] = argv[i];
-			nid++;
+			args->id = realloc(args->id, (args->nid+1)*sizeof(char *));
+			args->id[args->nid] = argv[i];
+			args->nid++;
 		}
 
 		/* task id */
@@ -217,9 +184,9 @@ int main(int argc, char *argv[])
 			}
 
 			/* add oid */
-			oid = realloc(oid, (noid+1)*sizeof(char *));
-			oid[noid] = argv[i];
-			noid++;
+			args->oid = realloc(args->oid, (args->noid+1)*sizeof(char *));
+			args->oid[args->noid] = argv[i];
+			args->noid++;
 		}
 
 		/* margin size */
@@ -230,7 +197,7 @@ int main(int argc, char *argv[])
 				usage();
 				exit(1);
 			}
-			d.margin = strtod(argv[i], &err);
+			args->d.margin = strtod(argv[i], &err);
 			if (*err != '\0') {
 				fprintf(stderr, "\nargument -m is not numeric (%s)\n", argv[i]);
 				usage();
@@ -240,12 +207,12 @@ int main(int argc, char *argv[])
 
 		/* display resource */
 		else if (strcmp(argv[i], "-res") == 0) {
-			d.display_res = 1;
+			args->d.display_res = 1;
 		}
 
 		/* display id */
 		else if (strcmp(argv[i], "-did") == 0) {
-			d.display_id = 1;
+			args->d.display_id = 1;
 		}
 
 		/* help */
@@ -260,40 +227,58 @@ int main(int argc, char *argv[])
 			usage();
 			exit(0);
 		}
-
 	}
 
+	return args;
+}
+
+int main(int argc, char *argv[])
+{
+	char *p;
+	struct list_head base = LIST_HEAD_INIT(base);
+	struct list_head res = LIST_HEAD_INIT(res);
+	struct task *t;
+	struct task *tt;
+	struct res *r;
+	struct res *rr;
+	time_t max;
+	int i;
+	int ok;
+	int first_id = 0;
+
+	arg_t* args = get_arguments(argc, argv);
+
 	/* checks */
-	if (in == NULL) {
+	if (args->in_file == NULL) {
 		fprintf(stderr, "\nsource file expected\n");
 		usage();
 		exit(1);
 	}
 
-	if (out == NULL && first_id == 0) {
+	if (args->out_file == NULL && first_id == 0) {
 		fprintf(stderr, "output file expected\n");
 		usage();
 		exit(1);
 	}
 
 	/* loda planning */
-	pla_load(&base, &res, in);
+	pla_load(&base, &res, args->in_file);
 
 	/* oid */
-	if (noid > 0) {
+	if (args->noid > 0) {
 
 		/* check childs */
 		list_for_each_entry(t, &base, c)
-			for (i=0; i<noid; i++)
-				if (strcpy(t->id, oid[i])==0)
+			for (i=0; i<args->noid; i++)
+				if (strcpy(t->id, args->oid[i])==0)
 					list_for_each_entry(tt, &t->childs, _child)
-						oid_add(&oid, &noid, tt->id);
+						oid_add(&args->oid, &args->noid, tt->id);
 
 		/* delete task */
 		list_for_each_entry_safe(t, tt, &base, c) {
 			ok = 0;
-			for (i=0; i<noid; i++)
-				if (t->id == oid[i])
+			for (i=0; i<args->noid; i++)
+				if (t->id == args->oid[i])
 					ok = 1;
 			if (ok == 1)
 				continue;
@@ -312,25 +297,25 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* recherche la date la plus petite */
-	d.start = -1;
+	/* Find the smallest date */
+	args->d.start = -1;
 	list_for_each_entry(t, &base, c) {
 
 		if (t->start == 0)
 			continue;
 
-		if (d.start == -1) {
-			d.start = t->start;
+		if (args->d.start == -1) {
+			args->d.start = t->start;
 			continue;
 		}
 
-		if (t->start < d.start) {
-			d.start = t->start;
+		if (t->start < args->d.start) {
+			args->d.start = t->start;
 			continue;
 		}
 	}
 
-	/* recherche la date la plus grande */
+	/* Find the largest date */
 	max = 0;
 	list_for_each_entry(t, &base, c) {
 
@@ -341,18 +326,18 @@ int main(int argc, char *argv[])
 			max = t->start + t->duration;
 	}
 
-	d.duration = max - d.start;
-	d.base = &base;
-	d.res = &res;
+	args->d.duration = max - args->d.start;
+	args->d.base = &base;
+	args->d.res = &res;
 
 	/* if id s known */
-	if (nid > 0) {
-		start = -1;
-		end = -1;
+	if (args->nid > 0) {
+		args->start = -1;
+		args->end = -1;
 
-		for (i=0; i<nid; i++) {
+		for (i=0; i<args->nid; i++) {
 
-			t = pla_task_get_by_id(&base, id[i]);
+			t = pla_task_get_by_id(&base, args->id[i]);
 			if (t == NULL) {
 				fprintf(stderr, "\nunknown id\n");
 				usage();
@@ -360,45 +345,45 @@ int main(int argc, char *argv[])
 			}
 			pla_task_update_date(t);
 
-			if (start == -1)
-				start = t->start;
+			if (args->start == -1)
+				args->start = t->start;
 
-			else if (start > t->start)
-				start = t->start;
+			else if (args->start > t->start)
+				args->start = t->start;
 
-			if (end == -1)
-				end = t->start + t->duration;
+			if (args->end == -1)
+				args->end = t->start + t->duration;
 
-			else if (end < t->start + t->duration)
-				end = t->start + t->duration;
+			else if (args->end < t->start + t->duration)
+				args->end = t->start + t->duration;
 		}
 	}
 
 	/* if start is set */
-	if (start != -1)
-		d.start = start;
-	
+	if (args->start != -1)
+		args->d.start = args->start;
+
 	/* if end is set */
-	if (end != -1)
-		d.duration = end - d.start;
+	if (args->end != -1)
+		args->d.duration = args->end - args->d.start;
 
 	/* auto select mode if needed */
-	if (mode == 0) {
-		p = strrchr(out, '.');
+	if (args->mode == 0) {
+		p = strrchr(args->out_file, '.');
 		if (p == NULL)
-			mode = 1; 
+			args->mode = 1;
 		else if (strcasecmp(p, ".png") == 0)
-			mode = 1;
+			args->mode = 1;
 		else if (strcasecmp(p, ".eps") == 0)
-			mode = 2;
+			args->mode = 2;
 		else if (strcasecmp(p, ".svg") == 0)
-			mode = 3;
+			args->mode = 3;
 		else if (strcasecmp(p, ".pdf") == 0)
-			mode = 4;
+			args->mode = 4;
 		else if (strcasecmp(p, ".csv") == 0)
-			mode = 5;
+			args->mode = 5;
 		else if (strcasecmp(p, ".tex") == 0)
-			mode = 6;
+			args->mode = 6;
 		else {
 			fprintf(stderr, "Unknown extension file, output format expected. see -f\n");
 			usage();
@@ -406,17 +391,17 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	switch (mode) {
+	switch (args->mode) {
 	case 1:
 	case 2:
 	case 3:
 	case 4:
-		pla_draw(mode, out, &d, lng);
+		pla_draw(args->mode, args->out_file, &args->d, args->lng);
 		break;
 
 	case 5:
 	case 6:
-		render_text(mode, out, &d);
+		render_text(args->mode, args->out_file, &args->d);
 		break;
 	}
 //	pla_store(&base, "out.pla");

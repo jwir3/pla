@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include "list.h"
 #include "pla.h"
@@ -34,7 +35,7 @@ void pla_load(struct list_head *base, struct list_head *res, const char *file)
 	/* open file */
 	fp = fopen(file, "r");
 	if (fp == NULL) {
-		fprintf(stderr, "cant open file \"%s\"\n", file);
+		fprintf(stderr, "Unable to open file \"%s\"\n", file);
 		exit(1);
 	}
 
@@ -203,7 +204,6 @@ void pla_load(struct list_head *base, struct list_head *res, const char *file)
 			p++;
 		}
 
-		
 		/**************************** TRAITEMENT *************************/
 
 		/* nouvelle tache */
@@ -249,12 +249,11 @@ void pla_load(struct list_head *base, struct list_head *res, const char *file)
 			}
 		}
 
-		/* durée */
 		else if (strcmp(attr, "duration") == 0) {
 			if (t == NULL) {
 				fprintf(stderr, "bad file format at line %d: task expected\n", line);
 				exit(1);
-			}	
+			}
 			if (pla_task_set_duration_sh(t, value) < 0) {
 				fprintf(stderr, "bad duration format at line %d\n", line);
 				exit(1);
@@ -403,7 +402,7 @@ void pla_store(struct list_head *base, const char *file)
 		fprintf(fp, "\tpercent %u\n", t->percent);
 
 		/* save color */
-		fprintf(fp, "\tcolor #%02x%02x%02x\n", 
+		fprintf(fp, "\tcolor #%02x%02x%02x\n",
 		        (unsigned int)(t->color.r * 255),
 		        (unsigned int)(t->color.g * 255),
 		        (unsigned int)(t->color.b * 255));
