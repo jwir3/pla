@@ -1,7 +1,13 @@
+VERSION_MAJOR=1
+VERSION_MINOR=0
+VERSION_PATCH=0
 PKG_CONFIG = $(shell which pkg-config)
 INC = ./include
 INC_CAIRO =
 LIB_CAIRO =
+LN = `which ln`
+CP = `which cp`
+RM = `which rm`
 
 CFLAGS = -Wall -g -O2 -fpic -I$(INC)
 LDFLAGS = -lm
@@ -39,10 +45,16 @@ build/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 lib: $(OBJS)
-	$(CC) -shared -o build/libpla.so $(OBJS) $(LDFLAGS)
+	$(CC) -shared -o build/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJS) $(LDFLAGS)
 
 main.o:
-	$(CC) -c -o build/pla src/main.c -L./build -lpla -Wall -g -O2 -I$(INC)
+	$(CC) -c -o build/pla src/main.c -lpla -Wall -g -O2 -I$(INC)
+
+install: lib
+	$(CP) -f build/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib
+	$(RM) -f /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
+	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib/libpla.so.$(VERSION_MAJOR)
+	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
 
 clean:
-	rm -f build/pla.* build/libpla.* $(OBJS)
+	rm -f build/pla build/libpla.* build/*.o
