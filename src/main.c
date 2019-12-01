@@ -232,23 +232,9 @@ arg_t* get_arguments(int argc, char* argv[]) {
 	return args;
 }
 
-int main(int argc, char *argv[])
-{
-	char *p;
-	struct list_head base = LIST_HEAD_INIT(base);
-	struct list_head res = LIST_HEAD_INIT(res);
-	struct task *t;
-	struct task *tt;
-	struct res *r;
-	struct res *rr;
-	time_t max;
-	int i;
-	int ok;
+void check_input_arguments(arg_t* args) {
 	int first_id = 0;
 
-	arg_t* args = get_arguments(argc, argv);
-
-	/* checks */
 	if (args->in_file == NULL) {
 		fprintf(stderr, "\nsource file expected\n");
 		usage();
@@ -260,6 +246,46 @@ int main(int argc, char *argv[])
 		usage();
 		exit(1);
 	}
+}
+
+int find_smallest_date(struct task* t, struct list_head* base) {
+	time_t start = -1;
+
+	list_for_each_entry(t, base, c) {
+		if (t->start == 0)
+			continue;
+
+		if (start == -1) {
+			start = t->start;
+			continue;
+		}
+
+		if (t->start < start) {
+			start = t->start;
+			continue;
+		}
+	}
+
+	return start;
+}
+
+int main(int argc, char *argv[])
+{
+	char *p;
+	struct list_head base = LIST_HEAD_INIT(base);
+	struct list_head res = LIST_HEAD_INIT(res);
+	struct task *t = NULL;
+	struct task *tt = NULL;
+	struct res *r;
+	struct res *rr;
+	time_t max;
+	int i;
+	int ok;
+
+	arg_t* args = get_arguments(argc, argv);
+
+	/* checks */
+	check_input_arguments(args);
 
 	/* loda planning */
 	pla_load(&base, &res, args->in_file);
@@ -298,22 +324,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Find the smallest date */
-	args->d.start = -1;
-	list_for_each_entry(t, &base, c) {
-
-		if (t->start == 0)
-			continue;
-
-		if (args->d.start == -1) {
-			args->d.start = t->start;
-			continue;
-		}
-
-		if (t->start < args->d.start) {
-			args->d.start = t->start;
-			continue;
-		}
-	}
+	args->d.start = find_smallest_date(t, &base);
 
 	/* Find the largest date */
 	max = 0;

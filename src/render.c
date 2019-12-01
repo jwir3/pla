@@ -350,13 +350,13 @@ void pla_cairo_task_background(cairo_t *c, int ps, struct task *t, struct disp *
 	        (t->start + t->duration >= d->start && t->start + t->duration <= d->start + d->duration) ) )
 		return;
 
-	/* calcule le départ */
+	/* calcule le dï¿½part */
 	x1 = d->margin;
 	x2 = d->w;
 	y1 = ps;
 	y2 = ps + DAY_H;
 
-	/* draw carré */
+	/* draw carrï¿½ */
 	cairo_new_path(c);
 	cairo_move_to(c, x1, y1);
 	cairo_line_to(c, x2, y1);
@@ -393,16 +393,16 @@ void pla_cairo_task(cairo_t *c, int ps, struct task *t, struct disp *d)
 	        (t->start + t->duration >= d->start && t->start + t->duration <= d->start + d->duration) ) )
 		return;
 
-	/* si on est une tache, on affcihe le carré bleu */
+	/* si on est une tache, on affcihe le carrï¿½ bleu */
 	if (t->childs.next == &t->childs) {
 
-		/* calcule le départ */
+		/* calcule le dï¿½part */
 		x1 = d->margin + ( (t->start - d->start) / 86400 * DAY_W );
 		x2 = d->margin + ( (( t->start + t->duration ) - d->start) / 86400 * DAY_W );
 		y1 = ps + TASK_BORD;
 		y2 = ps + DAY_H - TASK_BORD;
 
-		/* draw carré */
+		/* draw carrï¿½ */
 		cairo_new_path(c);
 		cairo_move_to(c, x1, y1);
 		cairo_line_to(c, x2, y1);
@@ -453,8 +453,8 @@ void pla_cairo_task(cairo_t *c, int ps, struct task *t, struct disp *d)
 
 		/*  */
 		pla_task_update_date(t);
-	
-		/* calcule le départ */
+
+		/* calcule le dï¿½part */
 		x1 = d->margin + ( ( t->start - d->start ) / 86400.0f * DAY_W );
 		x2 = d->margin + ( ( ( t->start + t->duration ) - d->start ) / 86400.0f * DAY_W );
 		y1 = ps + 4.0f;
@@ -529,15 +529,15 @@ void pla_cairo_arrow(cairo_t *c, int ps, struct task *t, struct disp *d)
 		        (tt->start >= d->start && tt->start <= d->start + d->duration) ) )
 			return;
 
-		/* calcule le départ */
+		/* calcule le dï¿½part */
 		x1 = d->margin + ( ( t->start - d->start ) / 86400 * DAY_W ) + ( (t->duration) / 86400 * DAY_W );
 		y1 = ps + TASK_BORD + ( ( ( ps + DAY_H - TASK_BORD ) - ( ps + TASK_BORD ) ) / 2 );
 
-		/* calcule l'arrivé */
+		/* calcule l'arrivï¿½ */
 		x2 = d->margin + ( ( tt->start - d->start ) / 86400 * DAY_W ) + ARROW;
 		y2 = HDR_DH + HDR_MH + ( pla_task_get_order(d->base, tt) * DAY_H ) + TASK_BORD;
 
-		/* draw carré */
+		/* draw carrï¿½ */
 		cairo_new_path(c);
 		cairo_move_to(c, x1, y1);
 		cairo_line_to(c, x2, y1);
@@ -648,13 +648,13 @@ void pla_cairo_disp_res(cairo_t *c, int ps, struct res *r, struct disp *d)
 		        (t->start + t->duration >= d->start && t->start + t->duration <= d->start + d->duration) ) )
 			continue;
 
-		/* calcule le départ */
+		/* calcule le dï¿½part */
 		x1 = d->margin + ( (t->start - d->start) / 86400 * DAY_W );
 		x2 = d->margin + ( (( t->start + t->duration ) - d->start) / 86400 * DAY_W );
 		y1 = ps + TASK_BORD;
 		y2 = ps + DAY_H - TASK_BORD;
 
-		/* draw carré */
+		/* draw carrï¿½ */
 		cairo_new_path(c);
 		cairo_move_to(c, x1, y1);
 		cairo_line_to(c, x2, y1);
@@ -748,7 +748,7 @@ void pla_cairo_heads(cairo_t *c, struct disp *d) {
 	struct res *r;
 	int ps;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	ps = HDR_DH + HDR_MH;
 	list_for_each_entry(t, d->base, c) {
 		pla_cairo_head(c, ps, t, d);
@@ -767,7 +767,7 @@ void pla_cairo_tasks_background(cairo_t *c, struct disp *d) {
 	struct task *t;
 	int ps;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	ps = HDR_DH + HDR_MH;
 	list_for_each_entry(t, d->base, c) {
 		pla_cairo_task_background(c, ps, t, d);
@@ -780,7 +780,7 @@ void pla_cairo_tasks(cairo_t *c, struct disp *d) {
 	struct task *t;
 	int ps;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	ps = HDR_DH + HDR_MH;
 	list_for_each_entry(t, d->base, c) {
 		pla_cairo_task(c, ps, t, d);
@@ -793,7 +793,7 @@ void pla_cairo_arrows(cairo_t *c, struct disp *d) {
 	struct task *t;
 	int ps;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	ps = HDR_DH + HDR_MH;
 	list_for_each_entry(t, d->base, c) {
 		pla_cairo_arrow(c, ps, t, d);
@@ -805,7 +805,7 @@ void pla_cairo_res(cairo_t *c, struct disp *d) {
 	struct res *r;
 	int ps;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	ps = d->rs;
 	list_for_each_entry(r, d->res, c) {
 		pla_cairo_disp_res(c, ps, r, d);
@@ -823,7 +823,7 @@ void pla_draw(int mode, const char *file_out, struct disp *d, enum language lng)
 	struct task *t;
 	struct res *r;
 
-	/* compte le nombre d'éléments a afficher */
+	/* compte le nombre d'ï¿½lï¿½ments a afficher */
 	nb = 0;
 	list_for_each_entry(t, d->base, c)
 		nb++;
@@ -888,7 +888,7 @@ void pla_draw(int mode, const char *file_out, struct disp *d, enum language lng)
 	c = cairo_create(s);
 
 	cairo_set_line_width(c, 0.2);
-	
+
 	/* draw background */
 	cairo_new_path(c);
 	cairo_move_to(c, 0, 0);
@@ -944,7 +944,7 @@ void pla_draw(int mode, const char *file_out, struct disp *d, enum language lng)
 	/* unclip */
 	cairo_reset_clip(c);
 
-	/* vertical gray week-end and days "fériés" */
+	/* vertical gray week-end and days "fï¿½riï¿½s" */
 	pla_cairo_day_feries(c, d);
 
 	/* month names */
