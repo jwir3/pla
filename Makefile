@@ -38,7 +38,7 @@ MAIN = build/main.o
 pla: build $(MAIN) lib
 	$(CC) -o build/pla build/main.o -L./build -lpla
 
-build:
+build: install-lib
 	mkdir -p build
 
 build/%.o: src/%.c
@@ -50,7 +50,7 @@ lib: $(OBJS)
 main.o:
 	$(CC) -c -o build/pla src/main.c -lpla -Wall -g -O2 -I$(INC)
 
-install: lib
+install-lib: lib
 	$(CP) -f build/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib
 	$(RM) -f /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
 	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib/libpla.so.$(VERSION_MAJOR)
