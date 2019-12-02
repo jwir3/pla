@@ -26,7 +26,6 @@ typedef struct arg_t {
 	int mode;
 	time_t start;
 	time_t end;
-	enum language lng;
 	struct disp d;
 	int noid;
 	char **oid;
@@ -38,12 +37,15 @@ void usage(void) {
 		"\n"
 		"pla -i <filename> -o <filename> [-f (eps|png|svg|pdf|csv|tex)]\n"
 		"    [-s yyyymmdd] [-e yyyymmdd] [-id task_id] [-oid task_id]\n"
-		"    [-res] [-did] [-m <margin>] -l (en|fr)\n"
+		"    [-res] [-did] [-m <margin>]\n"
 		"\n"
 		"    -res: display resources\n"
 		"    -did: display id\n"
 		"    -m  : margin size. Default 150\n"
 		"\n"
+		"You can use the LANG environment variable to control languages\n"
+		"for the purposes of month names:\n\n"
+		"LANG=fr_FR pla -i <filename> -o <filename>\n"
 	);
 }
 
@@ -56,7 +58,6 @@ arg_t* get_arguments(int argc, char* argv[]) {
 	args->mode = 0;
 	args->start = -1;
 	args->end = -1;
-	args->lng = french;
 	args->id = NULL;
 	args->d.display_res = 0;
 	args->d.display_id = 0;
@@ -121,19 +122,6 @@ arg_t* get_arguments(int argc, char* argv[]) {
 				exit(1);
 			}
 			args->end += 86400;
-		}
-		/* language */
-		else if (strcmp(argv[i], "-l") == 0) {
-			i++;
-			if (i == argc) {
-				fprintf(stderr, "\nargument -l expect format (en or fr)\n");
-				usage();
-				exit(1);
-			}
-		  if (strcasecmp(argv[i], "en") == 0)
-				args->lng = english;
-			else if (strcasecmp(argv[i], "fr") == 0)
-				args->lng = french;
 		}
 
 		/* format */
@@ -407,7 +395,7 @@ int main(int argc, char *argv[])
 	case 2:
 	case 3:
 	case 4:
-		pla_draw(args->mode, args->out_file, &args->d, args->lng);
+		pla_draw(args->mode, args->out_file, &args->d);
 		break;
 
 	case 5:
