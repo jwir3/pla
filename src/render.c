@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <langinfo.h>
+#include <locale.h>
 
 #include <cairo.h>
 #include <cairo-ps.h>
@@ -85,6 +87,8 @@ struct color white = {
 	1.0f
 };
 
+const nl_item nl_months[12] = {MON_1, MON_2, MON_3, MON_4, MON_5, MON_6, MON_7,
+                               MON_8, MON_9, MON_10, MON_11, MON_12};
 static
 void pla_cairo_day_ferie(cairo_t *c, int ps, struct disp *d)
 {
@@ -180,49 +184,22 @@ void pla_cairo_day(cairo_t *c, int ps, int day, struct disp *d)
 
 }
 
-static char *str_mois[][12] = {
-	{
-	//French
-	"Janvier",
-	"Février",
-	"Mars",
-	"Avril",
-	"Mai",
-	"Juin",
-	"Juillet",
-	"Aout",
-	"Septembre",
-	"Octore",
-	"Novembre",
-	"Décembre"
-	},
-	{
-	//English
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December"
-	}
-};
+static char** all_months = NULL;
 
 static
-const char *get_mois(int mois, enum language lng) {
-	if (mois >= 0 && mois <= 11)
-		return str_mois[lng][mois];
-	else
-		return "Unknown month";
+void populate_months() {
+	all_months = calloc(12, sizeof(const char*));
+	int i;
+	setlocale(LC_ALL, "");
+
+	for (i = 0; i < 12; i++) {
+		all_months[i] = nl_langinfo(nl_months[i]);
+		printf("Setting all_months[%d] to: %s\n", i, all_months[i]);
+	}
 }
 
 static
-void pla_cairo_month(cairo_t *c, int start, int stop, int mois, struct disp *d, enum language lng)
+void pla_cairo_month(cairo_t *c, int start, int stop, int mois, struct disp *d)
 {
 	cairo_text_extents_t exts;
 	double x;
@@ -252,8 +229,11 @@ void pla_cairo_month(cairo_t *c, int start, int stop, int mois, struct disp *d, 
 	 * |                    |
 	 *
 	 */
+	if (all_months == NULL) {
+		populate_months();
+	}
+	const char* month_text = all_months[mois];
 
-	const char * month_text = get_mois(mois, lng);
 	/* compute center of text */
 	cairo_text_extents (c, month_text, &exts);
 	x = ( start + ( (stop-start) / 2 ) )       -  ( ( exts.width  / 2 ) + exts.x_bearing );
@@ -712,7 +692,7 @@ void pla_cairo_days(cairo_t *c, struct disp *d) {
 }
 
 static
-void pla_cairo_months(cairo_t *c, struct disp *d, enum language lng) {
+void pla_cairo_months(cairo_t *c, struct disp *d) {
 	time_t r;
 	int ps;
 	struct tm tm;
@@ -727,7 +707,7 @@ void pla_cairo_months(cairo_t *c, struct disp *d, enum language lng) {
 
 			/* on dessine l'ancien mois */
 			if (m_mem != -1)
-				pla_cairo_month(c, start, ps, m_mem, d, lng);
+				pla_cairo_month(c, start, ps, m_mem, d);
 
 			/* on note le debut du nouveau mois */
 			start = ps;
@@ -739,7 +719,7 @@ void pla_cairo_months(cairo_t *c, struct disp *d, enum language lng) {
 	}
 
 	/* le dernier mois pas complet */
-	pla_cairo_month(c, start, ps, m_mem, d, lng);
+	pla_cairo_month(c, start, ps, m_mem, d);
 }
 
 static
@@ -813,7 +793,7 @@ void pla_cairo_res(cairo_t *c, struct disp *d) {
 	}
 }
 
-void pla_draw(int mode, const char *file_out, struct disp *d, enum language lng)
+void pla_draw(int mode, const char *file_out, struct disp *d)
 {
 	cairo_surface_t *s;
 	cairo_t *c;
@@ -948,7 +928,7 @@ void pla_draw(int mode, const char *file_out, struct disp *d, enum language lng)
 	pla_cairo_day_feries(c, d);
 
 	/* month names */
-	pla_cairo_months(c, d, lng);
+	pla_cairo_months(c, d);
 
 	/* days and vertical lines */
 	pla_cairo_days(c, d);
