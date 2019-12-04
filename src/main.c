@@ -28,7 +28,7 @@ typedef struct arg_t {
 	time_t end;
 	struct disp d;
 	int noid;
-	char **oid;
+	// char **oid;
 	int nid;
 } arg_t;
 
@@ -36,7 +36,7 @@ void usage(void) {
 	fprintf(stderr,
 		"\n"
 		"pla -i <filename> -o <filename> [-f (eps|png|svg|pdf|csv|tex)]\n"
-		"    [-s yyyymmdd] [-e yyyymmdd] [-id task_id] [-oid task_id]\n"
+		"    [-s yyyymmdd] [-e yyyymmdd] [-id task_id]\n"
 		"    [-res] [-did] [-m <margin>]\n"
 		"\n"
 		"    -res: display resources\n"
@@ -63,7 +63,7 @@ arg_t* get_arguments(int argc, char* argv[]) {
 	args->d.display_id = 0;
 	args->d.margin = 150.0f;
 	args->noid = 0;
-	args->oid = NULL;
+	// args->oid = NULL;
 	args->nid = 0;
 
 	/* argument parser */
@@ -162,21 +162,6 @@ arg_t* get_arguments(int argc, char* argv[]) {
 			args->nid++;
 		}
 
-		/* task id */
-		else if (strcmp(argv[i], "-oid") == 0) {
-			i++;
-			if (i == argc) {
-				fprintf(stderr, "\nargument -oid expect id\n");
-				usage();
-				exit(1);
-			}
-
-			/* add oid */
-			args->oid = realloc(args->oid, (args->noid+1)*sizeof(char *));
-			args->oid[args->noid] = argv[i];
-			args->noid++;
-		}
-
 		/* margin size */
 		else if (strcmp(argv[i], "-m") == 0) {
 			i++;
@@ -263,12 +248,8 @@ int main(int argc, char *argv[])
 	struct list_head base = LIST_HEAD_INIT(base);
 	struct list_head res = LIST_HEAD_INIT(res);
 	struct task *t = NULL;
-	struct task *tt = NULL;
-	struct res *r;
-	struct res *rr;
 	time_t max;
 	int i;
-	int ok;
 
 	arg_t* args = get_arguments(argc, argv);
 
@@ -277,39 +258,6 @@ int main(int argc, char *argv[])
 
 	/* loda planning */
 	pla_load(&base, &res, args->in_file);
-
-	/* oid */
-	if (args->noid > 0) {
-
-		/* check childs */
-		list_for_each_entry(t, &base, c)
-			for (i=0; i<args->noid; i++)
-				if (strcpy(t->id, args->oid[i])==0)
-					list_for_each_entry(tt, &t->childs, _child)
-						oid_add(&args->oid, &args->noid, tt->id);
-
-		/* delete task */
-		list_for_each_entry_safe(t, tt, &base, c) {
-			ok = 0;
-			for (i=0; i<args->noid; i++)
-				if (t->id == args->oid[i])
-					ok = 1;
-			if (ok == 1)
-				continue;
-			list_del(&t->c);
-		}
-
-		/* remove res */
-		list_for_each_entry_safe(r, rr, &res, c) {
-			ok = 0;
-			list_for_each_entry(t, &base, c)
-				for (i=0; i<t->nres; i++)
-					if (t->res[i] == r)
-						ok = 1;
-			if (ok == 0)
-				list_del(&r->c);
-		}
-	}
 
 	/* Find the smallest date */
 	args->d.start = find_smallest_date(t, &base);
