@@ -49,6 +49,30 @@ void usage(void) {
 	);
 }
 
+int auto_select_mode(arg_t* args) {
+	char* p;
+	p = strrchr(args->out_file, '.');
+	if (p == NULL) {
+		return 1;
+	} else if (strcasecmp(p, ".png") == 0) {
+		return 1;
+	} else if (strcasecmp(p, ".eps") == 0) {
+		return 2;
+	} else if (strcasecmp(p, ".svg") == 0) {
+		return 3;
+	} else if (strcasecmp(p, ".pdf") == 0) {
+		return 4;
+	} else if (strcasecmp(p, ".csv") == 0) {
+		return 5;
+	} else if (strcasecmp(p, ".tex") == 0) {
+		return 6;
+	}
+
+	fprintf(stderr, "Unknown file extension, output format expected. See -f\n");
+	usage();
+	exit(1);
+}
+
 arg_t* get_arguments(int argc, char* argv[]) {
 	int i;
 	char *err;
@@ -244,7 +268,6 @@ int find_smallest_date(struct task* t, struct list_head* base) {
 
 int main(int argc, char *argv[])
 {
-	char *p;
 	struct list_head base = LIST_HEAD_INIT(base);
 	struct list_head res = LIST_HEAD_INIT(res);
 	struct task *t = NULL;
@@ -256,7 +279,7 @@ int main(int argc, char *argv[])
 	/* checks */
 	check_input_arguments(args);
 
-	/* loda planning */
+	/* load the data structures into memory */
 	pla_load(&base, &res, args->in_file);
 
 	/* Find the smallest date */
@@ -316,26 +339,7 @@ int main(int argc, char *argv[])
 
 	/* auto select mode if needed */
 	if (args->mode == 0) {
-		p = strrchr(args->out_file, '.');
-		if (p == NULL)
-			args->mode = 1;
-		else if (strcasecmp(p, ".png") == 0)
-			args->mode = 1;
-		else if (strcasecmp(p, ".eps") == 0)
-			args->mode = 2;
-		else if (strcasecmp(p, ".svg") == 0)
-			args->mode = 3;
-		else if (strcasecmp(p, ".pdf") == 0)
-			args->mode = 4;
-		else if (strcasecmp(p, ".csv") == 0)
-			args->mode = 5;
-		else if (strcasecmp(p, ".tex") == 0)
-			args->mode = 6;
-		else {
-			fprintf(stderr, "Unknown extension file, output format expected. see -f\n");
-			usage();
-			exit(1);
-		}
+		args->mode = auto_select_mode(args);
 	}
 
 	switch (args->mode) {

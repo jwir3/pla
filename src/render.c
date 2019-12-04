@@ -194,7 +194,6 @@ void populate_months() {
 
 	for (i = 0; i < 12; i++) {
 		all_months[i] = nl_langinfo(nl_months[i]);
-		printf("Setting all_months[%d] to: %s\n", i, all_months[i]);
 	}
 }
 
