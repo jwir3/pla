@@ -27,8 +27,6 @@ typedef struct arg_t {
 	time_t start;
 	time_t end;
 	struct disp d;
-	int noid;
-	// char **oid;
 	int nid;
 } arg_t;
 
@@ -86,8 +84,6 @@ arg_t* get_arguments(int argc, char* argv[]) {
 	args->d.display_res = 0;
 	args->d.display_id = 0;
 	args->d.margin = 150.0f;
-	args->noid = 0;
-	// args->oid = NULL;
 	args->nid = 0;
 
 	/* argument parser */
@@ -300,7 +296,7 @@ int main(int argc, char *argv[])
 	args->d.base = &base;
 	args->d.res = &res;
 
-	/* if id s known */
+	/* if id is known */
 	if (args->nid > 0) {
 		args->start = -1;
 		args->end = -1;
@@ -355,6 +351,5 @@ int main(int argc, char *argv[])
 		render_text(args->mode, args->out_file, &args->d);
 		break;
 	}
-//	pla_store(&base, "out.pla");
 	return 0;
 }
