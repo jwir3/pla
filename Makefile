@@ -1,16 +1,22 @@
 VERSION_MAJOR=1
 VERSION_MINOR=0
 VERSION_PATCH=0
+
 PKG_CONFIG = $(shell which pkg-config)
-INC = ./include
-INC_CAIRO =
-LIB_CAIRO =
 LN = `which ln`
 CP = `which cp`
 RM = `which rm`
+MKDIR = `which mkdir`
 
-CFLAGS = -Wall -g -O2 -fpic -I$(INC)
-LDFLAGS = -lm
+BIN_LIB_DIR = $(shell pwd)/build/lib
+
+INC = ./include
+INC_CAIRO =
+LIB_CAIRO =
+LIB_CFLAGS = -fpic
+CFLAGS = -Wall -g -O2 -I$(INC)
+LIB_LDFLAGS = -lm
+BIN_LDFLAGS = -L$(BIN_LIB_DIR) -lpla
 
 ifneq ($(INC_CAIRO),)
   CFLAGS += -I$(INC_CAIRO)
@@ -23,38 +29,43 @@ else
 endif
 
 ifneq ($(LIB_CAIRO),)
-  LDFLAGS += -l$(LIB_CAIRO)
+  LIB_LDFLAGS += -l$(LIB_CAIRO)
 else
   ifneq ($(PKG_CONFIG),)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs cairo)
+    LIB_LDFLAGS += $(shell $(PKG_CONFIG) --libs cairo)
   else
-    LDFLAGS += -lcairo
+    LIB_LDFLAGS += -lcairo
   endif
 endif
 
-OBJS = build/render.o build/render_txt.o build/pla.o build/utils.o build/load.o build/utf8.o
+OBJS = build/lib/render.o build/lib/render_txt.o build/lib/pla.o build/lib/utils.o build/lib/load.o build/lib/utf8.o
 MAIN = build/main.o
 
-pla: build $(MAIN) lib
-	$(CC) -o build/pla build/main.o -L./build -lpla
+all: lib bin
 
-build: install-lib
-	mkdir -p build
+setup:
+	$(MKDIR) -p build/lib
 
-build/%.o: src/%.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+bin: $(MAIN)
+	$(CC) -o build/pla build/main.o $(BIN_LDFLAGS)
 
-lib: $(OBJS)
-	$(CC) -shared -o build/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJS) $(LDFLAGS)
+build/main.o:
+	$(CC) -c -o build/main.o src/main.c $(CFLAGS)
 
-main.o:
-	$(CC) -c -o build/pla src/main.c -lpla -Wall -g -O2 -I$(INC)
+build/lib/%.o: src/%.c
+	$(CC) -c -o $@ $< $(CFLAGS) $(LIB_CFLAGS)
 
-install-lib: lib
-	$(CP) -f build/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib
-	$(RM) -f /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
-	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib/libpla.so.$(VERSION_MAJOR)
-	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
+lib: setup build-lib create-lib-links
+
+build-lib: setup $(OBJS)
+	$(CC) -shared -o build/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJS) $(LIB_LDFLAGS)
+
+remove-lib-links:
+	$(RM) -f build/lib/libpla.so build/lib/libpla.so.$(VERSION_MAJOR)
+
+create-lib-links: remove-lib-links
+	$(LN) -s $(BIN_LIB_DIR)/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(BIN_LIB_DIR)/libpla.so.$(VERSION_MAJOR)
+	$(LN) -s $(BIN_LIB_DIR)/libpla.so.$(VERSION_MAJOR) $(BIN_LIB_DIR)/libpla.so
 
 clean:
-	rm -f build/pla build/libpla.* build/*.o
+	$(RM) -rf build
