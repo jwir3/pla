@@ -69,3 +69,10 @@ create-lib-links: remove-lib-links
 
 clean:
 	$(RM) -rf build
+
+install: all
+	$(CP) build/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
+	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) /usr/local/lib/libpla.so.$(VERSION_MAJOR)
+	$(LN) -s /usr/local/lib/libpla.so.$(VERSION_MAJOR) /usr/local/lib/libpla.so
+	$(CP) build/pla /usr/local/bin
+
